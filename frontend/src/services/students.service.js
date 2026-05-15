@@ -16,15 +16,21 @@ export const studentsService = {
       throw new Error('Faltan datos para subir la imagen.');
     }
 
+    // FormData permite enviar archivos binarios en una petición multipart/form-data
     const formData = new FormData();
 
-    // TODO(actividad): Agregar el archivo en FormData con la clave correcta
-    // Ejemplo esperado: formData.append('profile_picture', file)
+    // La clave 'profile_picture' debe coincidir con lo que espera el backend (request.FILES)
+    formData.append('profile_picture', file);
 
-    // TODO(actividad): Consumir el action endpoint del backend
-    // Endpoint esperado: /students/:id/upload-picture/
-    // Debes enviar multipart/form-data y retornar response.data
+    // Llama al action endpoint de DRF: /students/:id/upload-picture/
+    // Axios detecta automáticamente el Content-Type multipart/form-data al recibir FormData
+    const response = await api.post(
+      `/students/${studentId}/upload-picture/`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    );
 
-    throw new Error('TODO_ACTIVIDAD: Implementa uploadPicture en students.service.js');
+    // Retorna los datos del estudiante actualizado para refrescar la UI
+    return response.data;
   },
 };

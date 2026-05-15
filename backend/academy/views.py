@@ -17,14 +17,10 @@ class StudentViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='upload-picture',
             parser_classes=[MultiPartParser, FormParser])
     def upload_picture(self, request, pk=None):
+        # Obtiene el estudiante por su pk; lanza 404 si no existe
         student = self.get_object()
 
-        # TODO(actividad): Validar que exista `profile_picture` en request.FILES.
-        # TODO(actividad): Validar tipo/tamano basico del archivo antes de guardar.
-        # TODO(actividad): Usar StudentPictureSerializer para persistir la imagen.
-        # TODO(actividad): Retornar StudentSerializer(student, context={"request": request}).data
-        #                  cuando la subida sea exitosa.
-
+        # Valida que el archivo haya llegado en la petición
         incoming_file = request.FILES.get('profile_picture')
         if not incoming_file:
             return Response(
@@ -32,14 +28,22 @@ class StudentViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Usa StudentPictureSerializer para validar tipo/tamaño y persistir el archivo
+        serializer = StudentPictureSerializer(
+            student,
+            data=request.FILES,
+            partial=True,
+        )
+        if not serializer.is_valid():
+            # Retorna los errores de validación con 400
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save()
+
+        # Retorna el estudiante completo (con la URL pública de la imagen) al frontend
         return Response(
-            {
-                'detail': (
-                    'TODO_ACTIVIDAD: completa la logica de guardado en '
-                    'academy.views.StudentViewSet.upload_picture'
-                )
-            },
-            status=status.HTTP_501_NOT_IMPLEMENTED,
+            StudentSerializer(student, context={"request": request}).data,
+            status=status.HTTP_200_OK,
         )
 
 class InstructorViewSet(viewsets.ModelViewSet):

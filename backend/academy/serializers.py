@@ -8,8 +8,20 @@ class StudentSerializer(serializers.ModelSerializer):
 
 class StudentPictureSerializer(serializers.ModelSerializer):
     def validate_profile_picture(self, value):
-        # TODO(actividad): Implementar validaciones de archivo (tamano y tipo MIME).
-        # Ejemplo: permitir image/jpeg e image/png y limitar a 2MB.
+        # Tipos MIME permitidos: solo imágenes JPEG, PNG y WebP
+        allowed_types = ['image/jpeg', 'image/png', 'image/webp']
+        if value.content_type not in allowed_types:
+            raise serializers.ValidationError(
+                "Solo se permiten imágenes JPEG, PNG o WebP."
+            )
+
+        # Tamaño máximo permitido: 2 MB
+        max_size = 2 * 1024 * 1024  # 2 MB en bytes
+        if value.size > max_size:
+            raise serializers.ValidationError(
+                "La imagen no puede superar los 2 MB."
+            )
+
         return value
 
     class Meta:

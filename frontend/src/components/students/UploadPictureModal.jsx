@@ -89,12 +89,11 @@ export function UploadPictureModal({ student, onClose, onSuccess }) {
   };
 
   const capturePhoto = () => {
-    // TODO(actividad): Completar captura desde webcam y convertir canvas -> File.
-    // Pista: usa canvas.toBlob y crea un File para reutilizar el mismo flujo de subida.
     if (!videoRef.current) return;
     const video = videoRef.current;
     if (!video.videoWidth || !video.videoHeight) return;
 
+    // Crea un canvas del mismo tamaño que el video para dibujar el fotograma actual
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
@@ -102,15 +101,17 @@ export function UploadPictureModal({ student, onClose, onSuccess }) {
     if (!context) return;
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+    // toBlob convierte el canvas a un archivo binario JPEG con calidad 0.9
     canvas.toBlob((blob) => {
       if (!blob) return;
 
-      // TODO(actividad): construir el archivo capturado y actualizar estados.
-      // const file = new File([blob], "camera-capture.jpg", { type: "image/jpeg" });
-      // setUploadFile(file);
-      // setUploadPreview(URL.createObjectURL(file));
+      // Convierte el Blob a un objeto File para reutilizar el mismo flujo de subida
+      // que usa handleFileChange (setUploadFile + setUploadPreview)
+      const file = new File([blob], "camera-capture.jpg", { type: "image/jpeg" });
+      setUploadFile(file);
+      setUploadPreview(URL.createObjectURL(file));
 
-      setUploadError("TODO: completar guardado de captura desde webcam.");
+      // Detiene la webcam una vez capturada la foto
       stopCamera();
     }, "image/jpeg", 0.9);
   };
@@ -124,9 +125,22 @@ export function UploadPictureModal({ student, onClose, onSuccess }) {
     const file = e.target.files[0];
     if (!file) return;
 
-    // TODO(actividad): agregar validaciones basicas (tipo y tamano maximo).
-    // Ejemplos sugeridos: image/jpeg, image/png y un limite de 2MB.
+    // Validación de tipo: solo se aceptan JPEG, PNG y WebP (mismo criterio que el backend)
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      setUploadError("Solo se permiten imágenes JPEG, PNG o WebP.");
+      return;
+    }
 
+    // Validación de tamaño: máximo 2 MB
+    const maxSize = 2 * 1024 * 1024; // 2 MB en bytes
+    if (file.size > maxSize) {
+      setUploadError("La imagen no puede superar los 2 MB.");
+      return;
+    }
+
+    // Si pasa las validaciones, limpia el error y crea una URL de vista previa local
+    setUploadError("");
     setUploadFile(file);
     setUploadPreview(URL.createObjectURL(file));
   };
